@@ -176,4 +176,7 @@ def add(comment: str):
 if __name__ == '__main__':
     cli()
 
+    #przerobic add
+    #dodac potwierdzenie w train
+
 #potwierdzenie
