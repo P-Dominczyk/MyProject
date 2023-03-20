@@ -178,5 +178,3 @@ if __name__ == '__main__':
 
     #przerobic add
     #dodac potwierdzenie w train
-
-#potwierdzenie
