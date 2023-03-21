@@ -1,4 +1,5 @@
 import glob, pickle, sys
+from os.path import exists as file_exists
 
 import click
 
@@ -36,7 +37,7 @@ def load_revievs(path) -> None:
     return words, comment_counter
 
 
-def comment_to_check(comment) -> dict:
+def comment_to_check(comment) -> set:
     '''Creat a set of words'''
     comment = remove_punctuations(comment)
     comment = comment.lower().split()
@@ -75,7 +76,7 @@ def sentiment_raport(input_words, overall_sentiment) -> None:
     print(f'This sentence is {label}.\nSentiment = {overall_rating}')
 
 
-def open_database(DATABASE: str) -> None:
+def open_database() -> None:
     try:
         with open(DATABASE, 'rb') as stream:
             revievs = pickle.load(stream)
@@ -114,6 +115,13 @@ def add_to_database(comment: set) -> list:
     return revievs
          
 
+def overwrite_check():
+    if file_exists(DATABASE):
+        print('Attention! It will overewrie existing database.')
+        answer = input('For overewrie press <y>, press anything else fo cancel.   ')
+        if answer.lower() != 'y':
+            print('You have cancel action.')
+            sys.exit(3)
 
 
 @click.group()
@@ -123,6 +131,7 @@ def cli():
 @cli.command()
 def train():
     '''Use to train program, if it dont have data base'''
+    overwrite_check()
     print('This may take a while...')
     neg_words, neg_counter = load_revievs(NEGATIV_PATH)
     pos_words, pos_counter = load_revievs(POSITIVE_PATH)
@@ -138,7 +147,7 @@ def check(comment: str):
         len(comment) !=0
     except:
          comment = input('Type your comment to chek: ')
-    revievs = open_database(DATABASE)
+    revievs = open_database()
     pos_words = revievs[1]
     neg_words = revievs[0]
     comment = comment_to_check(comment)
@@ -149,7 +158,7 @@ def check(comment: str):
 @cli.command()
 def raport():
      '''Use to show how many comments program learnd'''
-     revievs = open_database(DATABASE)
+     revievs = open_database()
      neg_counter = revievs[2]
      pos_counter = revievs[3]
      print(f'I have learnd {pos_counter} positives comments and {neg_counter} negative comments\n In total its {neg_counter+pos_counter} comments')
@@ -175,6 +184,3 @@ def add(comment: str):
 
 if __name__ == '__main__':
     cli()
-
-    #przerobic add
-    #dodac potwierdzenie w train
