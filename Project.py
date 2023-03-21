@@ -92,7 +92,7 @@ def save_database(revievs: list) -> None:
 
 
 def add_to_database(comment: set) -> list:
-    revievs = open_database(DATABASE)
+    revievs = open_database()
     pos_words = revievs[1]
     neg_words = revievs[0]
     neg_counter = revievs[2]
