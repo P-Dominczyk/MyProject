@@ -1,11 +1,12 @@
 import glob
+from os.path import exists as file_exists
 import pickle
 import sys
-from os.path import exists as file_exists
+
 
 import click
 
-# python MyProject\Project.py check "This was an awesome movie! 10/10"
+# python Project.py check "This was an awesome movie! 10/10"
 # python MyProject\Project.py train
 # python MyProject\Project.py add
 # python MyProject\Project.py raport
@@ -48,34 +49,45 @@ def comment_to_check(comment: str) -> set:
     return (words_in_comment)
 
 
-def compute_sentiment(input_words: set, pos_words: dict, neg_words: dict) -> float:
-    overall_sentiment = 0
+def word_sentiment(word: str, pos_words: dict, neg_words: dict) -> float:
+    if word in (pos_words or neg_words):
+        all_ = pos_words[word] + neg_words[word]
+        sent = (pos_words[word] - neg_words[word])/all_
+    else:
+        sent = 0
+    return sent
+
+
+def collect_words_sentiment(words: set, pos_words: dict, neg_words: dict) -> dict:
+    words_sentiments = {}
+    for word in words:
+        sent = word_sentiment(word, pos_words, neg_words)
+        words_sentiments[word] = sent
+    return words_sentiments
+
+
+def sentence_sentiment(words_sentiments: dict) -> float:
+    sentiment = sum(words_sentiments.values()) / len(words_sentiments)
+    return (sentiment)
+
+
+def words_raport(words_sentiments: dict) -> None:
     print('Sentiment:| Word:')
     print('----------|------------')
-
-    for word in input_words:
-        if word in (pos_words or neg_words):
-            all_ = pos_words[word] + neg_words[word]
-            sent = (pos_words[word] - neg_words[word])/all_
-        else:
-            sent = 0
-        overall_sentiment += sent
-
-        print(f'{sent:^10.6f}|{word}')
+    for word in words_sentiments:
+        print(f'{words_sentiments[word]:^10.6f}|{word}')
         print('----------|------------')
-    return (overall_sentiment)
 
 
-def sentiment_raport(input_words, overall_sentiment) -> None:
+def sentiment_raport(sentiment: float) -> None:
     '''Print sentiment raport'''
-    overall_rating = overall_sentiment/len(input_words)
-    if overall_rating > 0:
+    if sentiment > 0:
         label = 'positive'
-    elif overall_rating < 0:
+    elif sentiment < 0:
         label = 'negative'
     else:
         label = 'neutral'
-    print(f'This sentence is {label}.\nSentiment = {overall_rating}')
+    print(f'This sentence is {label}.\nSentiment = {sentiment}')
 
 
 def open_database() -> None:
@@ -148,17 +160,17 @@ def train():
 @cli.command()
 @click.argument('comment', required=False)
 def check(comment: str):
-    '''Use to check the sentiment of words and sentences.'''
-    try:
-        len(comment) != 0
-    except:
+    '''Use to check the sentiment of words and sentence.'''
+    if not comment:
         comment = input('Type your comment to check: ')
     revievs = open_database()
     pos_words = revievs[1]
     neg_words = revievs[0]
-    comment = comment_to_check(comment)
-    overall_sentiment = compute_sentiment(comment, pos_words, neg_words)
-    sentiment_raport(comment, overall_sentiment)
+    words = comment_to_check(comment)
+    words_sentiments = collect_words_sentiment(words, pos_words, neg_words)
+    sentiment = sentence_sentiment(words_sentiments)
+    words_raport(words_sentiments)
+    sentiment_raport(sentiment)
 
 
 @cli.command()
@@ -178,9 +190,7 @@ def raport():
 @click.argument('comment', required=False)
 def add(comment: str):
     '''Use to add a comment to the database'''
-    try:
-        len(comment) != 0
-    except:
+    if not comment:
         comment = input('Enter your comment to add: ')
     comment = comment_to_check(comment)
     revievs = add_to_database(comment)
